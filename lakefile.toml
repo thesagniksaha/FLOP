@@ -1,0 +1,6 @@
+name = "flop"
+defaultTargets = ["Bench"]
+
+[[lean_lib]]
+name = "Bench"
+globs = ["Bench.+"]

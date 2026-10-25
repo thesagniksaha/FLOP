@@ -1,0 +1,14 @@
+# Lean build output
+.lake/
+.check/
+/.lake
+build/
+# macOS
+.DS_Store
+# Raw agent transcripts: full session logs that list local plugins, skills and MCP servers.
+# The REPORT-*.md summaries are kept.
+.env
+.vscode/
+.github/
+redteam/*/
+CLAUDE.md
