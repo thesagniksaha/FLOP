@@ -48,6 +48,8 @@ Policies are active only inside sandboxes made in `guarded` mode, never in this 
 
 ## Results
 
+![FLOP policy stats](docs/flop-policy-stats.svg)
+
 **Verifier selftest** (`scripts/selftest.sh`): 9 verifier cases plus 2 sandbox checks. Honest refutations pass; `sorry`, `native_decide`, a new `axiom`, a wrong statement type, a foreign import, a weakened spec and a wrong answer are all rejected. The sandbox checks fail if a sandbox contains any file outside the allowlist or any solved proof.
 
 **Policy test through Failproof's real hook entry point** (`scripts/fp-test.sh`): 8 of 8. Claude-format payloads piped into `failproofai --hook <Event> --cli claude`.
