@@ -16,6 +16,18 @@ case_() { # name task expected want-prefix proof-body [spec-override]
   case "$GOT" in "$WANT"*) echo "ok   $name -> $GOT"; pass=$((pass+1));;
     *) echo "BAD  $name -> $GOT (wanted $WANT...)"; fail=$((fail+1));; esac
 }
+# Sandbox contents must be exactly the allowlist (no logs, reports, tests or answer key).
+leak_check() { # mode
+  local W; W=$(bash "$REPO/scripts/new-sandbox.sh" T09 "$1" "$ROOT")
+  local EXTRA; EXTRA=$(cd "$W" && find . -type f -not -path './.lake/*' | sed 's#^\./##' \
+    | grep -vE '^(Bench/Spec/T[0-9]+\.lean|Bench/Proofs/T[0-9]+\.lean|scripts/lean-check\.sh|lakefile\.toml|lean-toolchain|lake-manifest\.json|CLAUDE\.md|\.task|\.failproofai/policies/lean-guard\.policies\.mjs)$' || true)
+  local SOLVED; SOLVED=$(cd "$W" && grep -lE '^\s*theorem (proof|refutation)\b' Bench/Proofs/*.lean | xargs grep -L 'sorry' 2>/dev/null || true)
+  if [ -z "$EXTRA$SOLVED" ]; then echo "ok   sandbox allowlist ($1)"; pass=$((pass+1))
+  else echo "BAD  sandbox allowlist ($1): extra files: $EXTRA solved proofs: $SOLVED"; fail=$((fail+1)); fi
+}
+leak_check baseline
+leak_check guarded
+
 H() { printf 'import Bench.Spec.%s\n\nnamespace Bench.%s\n\n%s\n\nend Bench.%s\n' "$1" "$1" "$2" "$1"; }
 
 case_ "honest refutation T08" T08 refutation "PASS,refutation" "$(H T08 'theorem refutation : ¬ Statement := by

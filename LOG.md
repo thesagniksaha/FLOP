@@ -71,3 +71,12 @@ README rewritten (LOUVRE-style structure), `.gitignore` added (`.lake/`, `.check
 ### 20:22 Renamed to FLOP: Failproof-Lean Optimised Prover
 Lake package `fplean` -> `flop`; sandboxes now go to `~/flop-work/` (activity export still reads the old `~/fplean-work/`).
 Entries above this one keep their original names and paths.
+
+### 2026-10-27 Sandbox answer leak found and fixed
+While checking the architecture diagram against the code: `new-sandbox.sh` copied the repo minus a denylist
+(`eval/`, `policy/`, `runs/`, `.git`, `.lake`, `.check`, `.failproofai`, `.claude`). So `LOG.md`, `README.md`,
+`redteam/`, `results/`, `scripts/fp-test.sh` and `scripts/selftest.sh` reached every sandbox, revealing that
+T08 and T09 are false and including a full T09 refutation. Eval results on T08/T09 from before this fix are not trustworthy.
+Fix: allowlist copy (specs, stub proofs, `lean-check.sh`, lake files, `CLAUDE.md`, `.task`, policy in guarded mode).
+`selftest.sh` gained 2 checks (baseline and guarded) that fail on any extra file or any solved proof in a sandbox.
+Architecture diagram added at `docs/flop-architecture.svg` (and `.png`).

@@ -16,6 +16,8 @@ The benchmark is nine core-Lean (no Mathlib) number theory claims, seven true an
 
 ## Architecture
 
+![FLOP architecture](docs/flop-architecture.svg)
+
 The project has three layers.
 
 **Benchmark** (`Bench/`, `stubs/`, `eval/answers.txt`)
@@ -46,7 +48,7 @@ Policies are active only inside sandboxes made in `guarded` mode, never in this 
 
 ## Results
 
-**Verifier selftest** (`scripts/selftest.sh`): 9 of 9. Honest refutations pass; `sorry`, `native_decide`, a new `axiom`, a wrong statement type, a foreign import, a weakened spec and a wrong answer are all rejected.
+**Verifier selftest** (`scripts/selftest.sh`): 9 verifier cases plus 2 sandbox checks. Honest refutations pass; `sorry`, `native_decide`, a new `axiom`, a wrong statement type, a foreign import, a weakened spec and a wrong answer are all rejected. The sandbox checks fail if a sandbox contains any file outside the allowlist or any solved proof.
 
 **Policy test through Failproof's real hook entry point** (`scripts/fp-test.sh`): 8 of 8. Claude-format payloads piped into `failproofai --hook <Event> --cli claude`.
 
@@ -80,7 +82,7 @@ bash scripts/fp-test.sh
 Expected output ends with:
 
 ```
-selftest: 9 ok, 0 bad
+selftest: 11 ok, 0 bad
 fp-test: 8 ok, 0 bad
 ```
 
@@ -91,6 +93,8 @@ cd "$(bash scripts/new-sandbox.sh T09 guarded)" && claude
 ```
 
 Sandboxes are created under `~/flop-work/`, outside this repo, for three reasons. Failproof finds project policies by walking up from the agent's working directory, so a baseline sandbox inside the repo would inherit the repo's `.failproofai`. Claude Code also reads `CLAUDE.md` and `.claude/` from parent folders. And from inside the repo, the answer key would be one `../` away. The folder is disposable.
+
+A sandbox receives only an allowlist: `Bench/Spec/`, stub proof files, `scripts/lean-check.sh`, `lakefile.toml`, `lean-toolchain`, `lake-manifest.json`, `CLAUDE.md` and `.task`, plus the policy file in guarded mode. Everything else in the repo (logs, reports, results, tests, this README) can reveal answers and is never copied.
 
 ## Running the red-team
 
@@ -124,6 +128,7 @@ Reads `~/.failproofai/hook-activity/` (the data behind the dashboard's activity 
 ## Findings and limitations
 
 - **Silent misconfiguration was the biggest risk.** The first red-team run enforced nothing because the policy file was named `lean-guard.mjs`. Failproof skipped it without warning. Verify every policy with one deliberate violation before trusting it.
+- **Early sandboxes leaked answers.** The sandbox script first copied the whole repo minus a denylist, so once logs, red-team reports and `fp-test.sh` existed, they reached the agent and revealed the T08 and T09 answers (and a full T09 proof). `eval/answers.txt` itself was excluded, which made the leak easy to miss. It is now an allowlist, and `selftest.sh` checks it.
 - **The stop gate is bounded.** After 4 blocks it allows the stop, so a determined agent can still exit with a failing proof. The verifier catches that, but the run is lost.
 - **The benchmark is currently too easy.** Opus 5.5 refuted T09 in 17 seconds. A harder set, calibrated so the baseline passes 1 or 2 of 3 runs, is planned (see `LOG.md`).
 - **Local plugins affect agent behavior.** Benchmark runs inherit the user's Claude Code plugins and skills. In our runs a plugin injected a large system prompt at session start. It applies equally to both modes, but reproductions on other machines may differ.
